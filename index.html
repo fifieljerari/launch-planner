@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Launch Planner</title>
+<meta name="description" content="Turn a market-entry strategy into a week-by-week launch timeline and budget split." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #141d27;
+    --paper: #EDE7D8;
+    --paper-dark: #E1D8C2;
+    --paper-line: rgba(20,29,39,0.14);
+    --brass: #9c7a3c;
+    --brass-deep: #7a5e2c;
+    --stamp-red: #9c3b2e;
+    --stamp-green: #3f6349;
+    --stamp-amber: #a97417;
+    --text: #1c2126;
+    --muted: #6b6558;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 { font-family: 'Fraunces', serif; font-weight: 600; margin: 0; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  a { color: var(--brass-deep); }
+
+  header.masthead {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 48px 24px 40px;
+    text-align: center;
+    background-image:
+      linear-gradient(var(--ink), var(--ink)),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 22px);
+  }
+
+  header.masthead .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 14px;
+  }
+
+  header.masthead h1 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: 0.5px; }
+
+  header.masthead p.tagline {
+    max-width: 560px;
+    margin: 14px auto 0;
+    color: rgba(237,231,216,0.72);
+    font-size: 1.02rem;
+  }
+
+  main { max-width: 780px; margin: 0 auto; padding: 40px 20px 100px; }
+
+  .card {
+    background: var(--paper-dark);
+    border: 1px solid var(--paper-line);
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(20,29,39,0.05);
+    padding: 32px;
+    position: relative;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brass), var(--brass-deep));
+  }
+
+  .form-card h2 { font-size: 1.3rem; }
+
+  .form-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--brass-deep);
+    margin-bottom: 6px;
+  }
+
+  .form-card p.form-sub { color: var(--muted); margin: 8px 0 24px; font-size: 0.95rem; }
+
+  /* ---------- Carried-from-Dossier chips ---------- */
+
+  .carried-block { margin-bottom: 26px; }
+
+  .carried-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+  .chip {
+    background: var(--paper);
+    border: 1px solid var(--paper-line);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--ink);
+  }
+
+  /* ---------- Form ---------- */
+
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; }
+  .field { display: flex; flex-direction: column; }
+
+  .field label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  input[type="date"], input[type="number"], select {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 1rem;
+    padding: 13px 12px;
+    min-height: 46px;
+    border: 1px solid var(--paper-line);
+    background: var(--paper);
+    color: var(--text);
+    border-radius: 2px;
+    width: 100%;
+  }
+
+  select { appearance: auto; }
+
+  input:focus, select:focus { outline: 2px solid var(--brass); outline-offset: 1px; }
+
+  .price-input-wrap { display: flex; align-items: stretch; }
+
+  .price-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: var(--paper-line);
+    border: 1px solid var(--paper-line);
+    border-right: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .price-input-wrap input { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+
+  button.submit {
+    margin-top: 28px;
+    width: 100%;
+    padding: 16px 20px;
+    min-height: 52px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.95rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  button.submit:hover:not(:disabled) { background: #232f3d; }
+  button.submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .field-error {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--stamp-red);
+    text-align: center;
+  }
+
+  /* ---------- Loading ---------- */
+
+  #loading { text-align: center; padding: 50px 20px; }
+
+  .spinner {
+    width: 38px; height: 38px; margin: 0 auto 20px;
+    border: 3px solid var(--paper-line);
+    border-top-color: var(--brass);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #loading .loading-text { font-family: 'IBM Plex Mono', monospace; color: var(--muted); font-size: 0.92rem; }
+
+  .hidden { display: none !important; }
+
+  /* ---------- Results ---------- */
+
+  #results { margin-top: 32px; }
+
+  .results-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--brass-deep);
+    margin-bottom: 14px;
+  }
+
+  .results-title { font-size: 1.5rem; margin-bottom: 4px; }
+  .results-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 26px; }
+
+  /* ---------- Warning banner ---------- */
+
+  .warning-banner {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px 18px;
+    margin-bottom: 26px;
+    border-radius: 2px;
+    border-left: 4px solid var(--stamp-amber);
+    background: rgba(169, 116, 23, 0.1);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .warning-banner.is-red {
+    border-left-color: var(--stamp-red);
+    background: rgba(156, 59, 46, 0.1);
+  }
+
+  .warning-banner .warning-mark {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+    color: var(--stamp-amber);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .warning-banner.is-red .warning-mark { color: var(--stamp-red); }
+
+  /* ---------- Timeline ---------- */
+
+  .timeline { list-style: none; margin: 0 0 40px; padding: 0; }
+
+  .timeline-item {
+    display: flex;
+    gap: 18px;
+    position: relative;
+    padding-bottom: 28px;
+  }
+
+  .timeline-item:last-child { padding-bottom: 0; }
+
+  .timeline-marker-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .timeline-dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 3px solid var(--brass);
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+
+  .timeline-item.is-launch .timeline-dot { border-color: var(--stamp-green); background: var(--stamp-green); }
+
+  .timeline-line {
+    flex: 1;
+    width: 2px;
+    background: var(--paper-line);
+    margin-top: 4px;
+  }
+
+  .timeline-body { flex: 1; min-width: 0; padding-top: 0; }
+
+  .timeline-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+    color: var(--brass-deep);
+    margin-bottom: 4px;
+  }
+
+  .timeline-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; font-family: 'Fraunces', serif; }
+  .timeline-why { font-size: 0.92rem; color: var(--text); line-height: 1.55; min-height: 1.4em; }
+  .timeline-why.loading { color: var(--muted); font-style: italic; }
+
+  .timeline-cta {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 12px 18px;
+    min-height: 44px;
+    line-height: 20px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+  }
+
+  .timeline-cta:hover { background: #232f3d; }
+
+  /* ---------- Budget split ---------- */
+
+  .budget-section { margin-top: 8px; }
+
+  .budget-bar {
+    display: flex;
+    width: 100%;
+    height: 14px;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 18px;
+    border: 1px solid var(--paper-line);
+  }
+
+  .budget-seg:nth-child(1) { background: var(--brass); }
+  .budget-seg:nth-child(2) { background: var(--brass-deep); }
+  .budget-seg:nth-child(3) { background: var(--stamp-amber); }
+  .budget-seg:nth-child(4) { background: var(--stamp-green); }
+  .budget-seg:nth-child(5) { background: var(--muted); }
+
+  .budget-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .budget-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--paper);
+    border: 1px solid var(--paper-line);
+    border-radius: 2px;
+    padding: 12px 16px;
+  }
+
+  .budget-row-label { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; min-width: 0; }
+
+  .budget-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .budget-swatch.c0 { background: var(--brass); }
+  .budget-swatch.c1 { background: var(--brass-deep); }
+  .budget-swatch.c2 { background: var(--stamp-amber); }
+  .budget-swatch.c3 { background: var(--stamp-green); }
+  .budget-swatch.c4 { background: var(--muted); }
+
+  .budget-row-figures { display: flex; align-items: baseline; gap: 10px; flex-shrink: 0; }
+  .budget-pct { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+  .budget-amount { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.05rem; }
+
+  .edit-btn {
+    display: block;
+    width: 100%;
+    margin-top: 30px;
+    padding: 14px;
+    min-height: 48px;
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  .edit-btn:hover { background: var(--ink); color: var(--paper); }
+
+  #gemini-error {
+    margin-top: -6px;
+    margin-bottom: 26px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  footer {
+    text-align: center;
+    padding: 28px 20px 40px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ---------- Mobile ---------- */
+
+  @media (max-width: 760px) {
+    .field-grid { grid-template-columns: 1fr; }
+    .card { padding: 22px 18px; }
+    main { padding: 28px 14px 80px; }
+    header.masthead { padding: 36px 18px 32px; }
+    .timeline-item { gap: 12px; }
+    .budget-row { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="eyebrow">Go-To-Market Timeline &amp; Budget</div>
+  <h1>Launch Planner</h1>
+  <p class="tagline">Set a launch date and a budget. Get a real week-by-week timeline and a budget split back &mdash; no strategy re-typed, no numbers guessed.</p>
+</header>
+
+<main>
+
+  <section class="card form-card" id="form-section">
+    <div class="carried-block hidden" id="carried-block">
+      <div class="carried-label">Carried from the Market Entry Dossier</div>
+      <ul class="chip-list" id="carried-chips"></ul>
+    </div>
+
+    <div class="form-eyebrow">Launch Parameters</div>
+    <h2>Build the Timeline</h2>
+    <p class="form-sub">Pick a target launch date and total budget. The dates and dollar splits below are calculated directly, not guessed by a model &mdash; only the short "why it matters" notes are AI-written.</p>
+
+    <form id="planner-form">
+      <div class="field-grid">
+        <div class="field">
+          <label for="launchDate">Target Launch Date</label>
+          <input type="date" id="launchDate" required />
+        </div>
+        <div class="field">
+          <label for="budget">Total Launch Budget</label>
+          <div class="price-input-wrap">
+            <span class="price-prefix" id="budget-prefix">USD</span>
+            <input type="number" id="budget" min="0" step="1" placeholder="e.g. 25000" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="launchType">Launch Type</label>
+          <select id="launchType" required>
+            <option value="" disabled selected>Select&hellip;</option>
+            <option value="New brand entering this market">New brand entering this market</option>
+            <option value="Existing brand — new product line">Existing brand — new product line</option>
+            <option value="Existing brand — line extension">Existing brand — line extension</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="audience">Target Audience</label>
+          <select id="audience" required>
+            <option value="" disabled selected>Select&hellip;</option>
+            <option value="Gen Z (18-27)">Gen Z (18-27)</option>
+            <option value="Millennial (28-43)">Millennial (28-43)</option>
+            <option value="Gen X+ (44+)">Gen X+ (44+)</option>
+            <option value="Broad / all ages">Broad / all ages</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="productCount">Number of Products Launching</label>
+          <select id="productCount" required>
+            <option value="" disabled selected>Select&hellip;</option>
+            <option value="Single hero product">Single hero product</option>
+            <option value="Small collection (2-4 SKUs)">Small collection (2-4 SKUs)</option>
+            <option value="Full line (5+ SKUs)">Full line (5+ SKUs)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="teamSize">Team Size</label>
+          <select id="teamSize" required>
+            <option value="" disabled selected>Select&hellip;</option>
+            <option value="Just me">Just me</option>
+            <option value="Small team (2-5 people)">Small team (2-5 people)</option>
+            <option value="I have agency support">I have agency support</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="mfgStatus">Manufacturing / Inventory Status</label>
+          <select id="mfgStatus" required>
+            <option value="" disabled selected>Select&hellip;</option>
+            <option value="Product is manufactured and ready to ship">Product is manufactured and ready to ship</option>
+            <option value="Still in production">Still in production</option>
+            <option value="Not yet started">Not yet started</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="submit" id="submit-btn">Build the Plan</button>
+      <div class="field-error hidden" id="form-error">Please complete all fields above, with a budget greater than 0.</div>
+    </form>
+  </section>
+
+  <section id="loading" class="hidden">
+    <div class="spinner"></div>
+    <div class="loading-text mono">Writing the "why it matters" notes&hellip;</div>
+  </section>
+
+  <section id="results" class="hidden"></section>
+
+</main>
+
+<footer>
+  Launch Planner is a portfolio demo. Timeline dates and budget figures are calculated deterministically; only the milestone explanations are AI-generated.
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Reference data ----------
+
+  const BUDGET_SPLITS = {
+    __baseline: { paidSocial: 45, creator: 25, content: 15, pr: 10, contingency: 5 },
+    "Luxury / Prestige": { paidSocial: 35, creator: 30, content: 15, pr: 15, contingency: 5 },
+    "Mass Value": { paidSocial: 55, creator: 20, content: 12, pr: 8, contingency: 5 },
+    "Influencer-Led / Gen Z": { paidSocial: 40, creator: 35, content: 12, pr: 8, contingency: 5 },
+    "Clinical / Dermatological": { paidSocial: 40, creator: 15, content: 25, pr: 15, contingency: 5 },
+    "Clean & Natural": { paidSocial: 40, creator: 20, content: 20, pr: 15, contingency: 5 }
+  };
+
+  const BUDGET_LABELS = [
+    { key: "paidSocial", label: "Paid social / digital" },
+    { key: "creator", label: "Creator / influencer seeding" },
+    { key: "content", label: "Content production" },
+    { key: "pr", label: "PR / earned media" },
+    { key: "contingency", label: "Contingency" }
+  ];
+
+  const SHELF_READY_URL = "https://shelf-copy.vercel.app/";
+
+  // ---------- URL params ----------
+
+  function readCarried() {
+    const p = new URLSearchParams(window.location.search);
+    const get = (k) => (p.get(k) || "").trim();
+    return {
+      country: get("country"),
+      category: get("category"),
+      price: get("price"),
+      currency: get("currency"),
+      marketingStyle: get("marketingStyle"),
+      distribution: get("distribution"),
+      cacLow: get("cacLow"),
+      cacHigh: get("cacHigh")
+    };
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = String(str == null ? "" : str);
+    return div.innerHTML;
+  }
+
+  function renderCarriedChips(carried) {
+    const chips = [];
+    if (carried.country) chips.push(carried.country);
+    if (carried.category) chips.push(carried.category);
+    if (carried.distribution) chips.push(carried.distribution);
+    if (carried.marketingStyle) chips.push(carried.marketingStyle);
+    if (carried.price && carried.currency) chips.push(carried.price + " " + carried.currency);
+    if (carried.cacLow && carried.cacHigh) {
+      const cur = carried.currency || "";
+      chips.push("Est. CAC: " + cur + " " + carried.cacLow + "–" + carried.cacHigh);
+    }
+    if (chips.length === 0) return;
+    document.getElementById("carried-block").classList.remove("hidden");
+    document.getElementById("carried-chips").innerHTML = chips
+      .map((c) => '<li class="chip">' + escapeHtml(c) + "</li>")
+      .join("");
+  }
+
+  // ---------- Deterministic timeline math ----------
+
+  function parseLocalDate(dateStr) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function addWeeks(date, weeks) {
+    const d = new Date(date.getTime());
+    d.setDate(d.getDate() + weeks * 7);
+    return d;
+  }
+
+  function formatDate(date) {
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  }
+
+  const TEAM_SIZE_MULTIPLIERS = {
+    "Just me": 1.3,
+    "Small team (2-5 people)": 1,
+    "I have agency support": 0.85
+  };
+
+  const CONTENT_WINDOW_EXTRA_WEEKS = {
+    "Single hero product": 0,
+    "Small collection (2-4 SKUs)": 1,
+    "Full line (5+ SKUs)": 2
+  };
+
+  function roundToHalfWeek(weeks) {
+    return Math.round(weeks * 2) / 2;
+  }
+
+  function buildMilestones(launchDate, category, formValues) {
+    const { launchType, teamSize, productCount, mfgStatus } = formValues || {};
+    const regulatoryWeeks = category === "SPF / Sun Care" ? -12 : -4;
+    const awarenessWeeks = category === "SPF / Sun Care" ? -12 : -10;
+    const contentExtraWeeks = CONTENT_WINDOW_EXTRA_WEEKS[productCount] || 0;
+
+    const defs = [
+      { id: "regulatory", label: "Regulatory filing submitted", weeksOffset: regulatoryWeeks },
+      {
+        id: "awareness",
+        label: "Begin brand awareness building (messaging, foundational site)",
+        weeksOffset: awarenessWeeks,
+        skip: launchType === "Existing brand — line extension"
+      },
+      { id: "retailer", label: "Retailer listing agreement finalized", weeksOffset: -8 },
+      { id: "content", label: "Content production window begins", weeksOffset: -6 - contentExtraWeeks, cta: true },
+      { id: "creator", label: "Creator / influencer outreach begins", weeksOffset: -5 },
+      { id: "media", label: "Paid media setup & first campaigns go live", weeksOffset: -2 },
+      { id: "launch", label: "Launch day", weeksOffset: 0 },
+      { id: "checkin", label: "First performance check-in", weeksOffset: 2 }
+    ];
+
+    const multiplier = TEAM_SIZE_MULTIPLIERS[teamSize] || 1;
+
+    return defs
+      .filter((m) => !m.skip)
+      .map((m) => {
+        const weeksOffset = m.weeksOffset < 0 ? roundToHalfWeek(m.weeksOffset * multiplier) : m.weeksOffset;
+        return { ...m, weeksOffset, date: addWeeks(launchDate, weeksOffset) };
+      })
+      .sort((a, b) => a.date - b.date);
+  }
+
+  // ---------- Deterministic budget math ----------
+
+  function resolveBudgetSplit(marketingStyle) {
+    return BUDGET_SPLITS[marketingStyle] || BUDGET_SPLITS.__baseline;
+  }
+
+  function applyAudienceShift(split, audience) {
+    const adjusted = { ...split };
+    if (audience === "Gen Z (18-27)") {
+      adjusted.creator += 10;
+      adjusted.paidSocial -= 10;
+    } else if (audience === "Gen X+ (44+)") {
+      adjusted.paidSocial += 10;
+      adjusted.creator -= 10;
+    }
+    return adjusted;
+  }
+
+  function applyProductCountShift(split, productCount) {
+    const adjusted = { ...split };
+    if (productCount === "Full line (5+ SKUs)") {
+      adjusted.content += 5;
+      adjusted.contingency -= 5;
+    }
+    return adjusted;
+  }
+
+  function fmtMoney(amount, currency) {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: currency || "USD",
+        maximumFractionDigits: 0
+      }).format(amount);
+    } catch (e) {
+      return (currency || "USD") + " " + Math.round(amount).toLocaleString();
+    }
+  }
+
+  function buildBudgetRows(totalBudget, currency, marketingStyle, audience, productCount) {
+    let split = resolveBudgetSplit(marketingStyle);
+    split = applyAudienceShift(split, audience);
+    split = applyProductCountShift(split, productCount);
+    return BUDGET_LABELS.map((b, i) => ({
+      key: b.key,
+      label: b.label,
+      pct: split[b.key],
+      amount: Math.round((totalBudget * split[b.key]) / 100),
+      colorClass: "c" + i
+    }));
+  }
+
+  // ---------- Gemini call for milestone explanations ----------
+
+  function buildPrompt(milestones, carried, formValues) {
+    const { launchType, audience, productCount, teamSize, mfgStatus } = formValues || {};
+    const context = [
+      carried.country ? "country: " + carried.country : null,
+      carried.category ? "product category: " + carried.category : null,
+      carried.marketingStyle ? "marketing style: " + carried.marketingStyle : null,
+      carried.distribution ? "distribution channel: " + carried.distribution : null,
+      launchType ? "launch type: " + launchType : null,
+      audience ? "target audience: " + audience : null,
+      productCount ? "number of products launching: " + productCount : null,
+      teamSize ? "team size: " + teamSize : null,
+      mfgStatus ? "manufacturing/inventory status: " + mfgStatus : null
+    ].filter(Boolean).join(", ") || "no additional context provided";
+
+    const lines = milestones
+      .map((m) => `- ${m.id}: "${m.label}" on ${formatDate(m.date)}`)
+      .join("\n");
+
+    return `You are a beauty brand launch strategist. Context for this launch: ${context}.
+
+For each launch timeline milestone below, write ONE short, plain-English sentence (under 20 words, no jargon) explaining why that milestone matters for this specific launch. Where the launch type, target audience, number of products, team size, or manufacturing status specifically affects a milestone (e.g. a longer content window because of the number of SKUs, or a tighter timeline because it's a solo founder), reference that directly instead of writing something generic.
+
+Milestones:
+${lines}
+
+Respond ONLY with valid JSON in this exact shape, no markdown fences, no preamble, keyed by the exact ids shown above:
+{
+${milestones.map((m) => `  "${m.id}": "..."`).join(",\n")}
+}`;
+  }
+
+  async function fetchExplanations(milestones, carried, formValues) {
+    const prompt = buildPrompt(milestones, carried, formValues);
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    if (!response.ok) throw new Error("Request failed");
+    const data = await response.json();
+    const textBlock = (data.content || []).find((b) => b.type === "text");
+    if (!textBlock) throw new Error("No text response received");
+    const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleaned);
+  }
+
+  // ---------- Rendering ----------
+
+  function renderWarningBanner(mfgStatus) {
+    if (mfgStatus !== "Still in production" && mfgStatus !== "Not yet started") return "";
+    const isRed = mfgStatus === "Not yet started";
+    return `
+      <div class="warning-banner ${isRed ? "is-red" : ""}">
+        <span class="warning-mark">Heads up</span>
+        <span>Custom packaging typically takes 8&ndash;12 weeks alone &mdash; double check your manufacturing timeline can hit this launch date before committing marketing spend around it.</span>
+      </div>`;
+  }
+
+  function renderTimeline(milestones, carried) {
+    const items = milestones
+      .map((m, i) => {
+        const isLast = i === milestones.length - 1;
+        const cta = m.cta
+          ? `<a class="timeline-cta" href="${buildShelfReadyUrl(carried)}">Write your copy now &rarr;</a>`
+          : "";
+        return `
+          <li class="timeline-item ${m.id === "launch" ? "is-launch" : ""}">
+            <div class="timeline-marker-col">
+              <div class="timeline-dot"></div>
+              ${isLast ? "" : '<div class="timeline-line"></div>'}
+            </div>
+            <div class="timeline-body">
+              <div class="timeline-date mono">${escapeHtml(formatDate(m.date))}</div>
+              <div class="timeline-title">${escapeHtml(m.label)}</div>
+              <div class="timeline-why loading" id="why-${m.id}">Thinking about why this matters&hellip;</div>
+              ${cta}
+            </div>
+          </li>`;
+      })
+      .join("");
+    return `<ul class="timeline">${items}</ul>`;
+  }
+
+  function renderBudget(rows, totalBudget, currency) {
+    const bar = rows.map((r) => `<div class="budget-seg" style="flex-basis:${r.pct}%"></div>`).join("");
+    const list = rows
+      .map(
+        (r) => `
+        <div class="budget-row">
+          <div class="budget-row-label">
+            <span class="budget-swatch ${r.colorClass}"></span>
+            ${escapeHtml(r.label)}
+          </div>
+          <div class="budget-row-figures">
+            <span class="budget-pct mono">${r.pct}%</span>
+            <span class="budget-amount">${escapeHtml(fmtMoney(r.amount, currency))}</span>
+          </div>
+        </div>`
+      )
+      .join("");
+    return `
+      <div class="results-eyebrow">Budget Split</div>
+      <h3 class="results-title">${escapeHtml(fmtMoney(totalBudget, currency))} total</h3>
+      <p class="results-sub">Split shown adjusts for the carried marketing style where one was provided.</p>
+      <div class="budget-section">
+        <div class="budget-bar">${bar}</div>
+        <div class="budget-list">${list}</div>
+      </div>`;
+  }
+
+  function buildShelfReadyUrl(carried) {
+    const params = new URLSearchParams();
+    if (carried.country) params.set("country", carried.country);
+    if (carried.category) params.set("category", carried.category);
+    if (carried.marketingStyle) params.set("marketingStyle", carried.marketingStyle);
+    const qs = params.toString();
+    return SHELF_READY_URL + (qs ? "?" + qs : "");
+  }
+
+  // ---------- Submit flow ----------
+
+  let currentCarried = readCarried();
+
+  async function handleSubmit(evt) {
+    evt.preventDefault();
+
+    const dateVal = document.getElementById("launchDate").value;
+    const budgetVal = Number(document.getElementById("budget").value);
+    const formValues = {
+      launchType: document.getElementById("launchType").value,
+      audience: document.getElementById("audience").value,
+      productCount: document.getElementById("productCount").value,
+      teamSize: document.getElementById("teamSize").value,
+      mfgStatus: document.getElementById("mfgStatus").value
+    };
+    const errorEl = document.getElementById("form-error");
+
+    const allFieldsFilled = Object.values(formValues).every((v) => v);
+    if (!dateVal || !budgetVal || budgetVal <= 0 || !allFieldsFilled) {
+      errorEl.classList.remove("hidden");
+      return;
+    }
+    errorEl.classList.add("hidden");
+
+    const launchDate = parseLocalDate(dateVal);
+    const currency = currentCarried.currency || "USD";
+    const milestones = buildMilestones(launchDate, currentCarried.category, formValues);
+    const budgetRows = buildBudgetRows(budgetVal, currency, currentCarried.marketingStyle, formValues.audience, formValues.productCount);
+
+    document.getElementById("form-section").classList.add("hidden");
+
+    const resultsEl = document.getElementById("results");
+    resultsEl.innerHTML =
+      '<div class="results-eyebrow">Launch Timeline</div>' +
+      '<h3 class="results-title">Working backward from ' + escapeHtml(formatDate(launchDate)) + '</h3>' +
+      '<p class="results-sub">Dates and dollar amounts below are computed directly — only the short explanations are AI-written.</p>' +
+      renderWarningBanner(formValues.mfgStatus) +
+      renderTimeline(milestones, currentCarried) +
+      renderBudget(budgetRows, budgetVal, currency) +
+      '<div id="gemini-error" class="hidden"></div>' +
+      '<button class="edit-btn" id="edit-btn">Edit Inputs</button>';
+    resultsEl.classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    document.getElementById("edit-btn").addEventListener("click", () => {
+      resultsEl.classList.add("hidden");
+      document.getElementById("form-section").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    try {
+      const explanations = await fetchExplanations(milestones, currentCarried, formValues);
+      milestones.forEach((m) => {
+        const el = document.getElementById("why-" + m.id);
+        if (!el) return;
+        const text = explanations[m.id];
+        el.classList.remove("loading");
+        el.textContent = text || "";
+      });
+    } catch (err) {
+      milestones.forEach((m) => {
+        const el = document.getElementById("why-" + m.id);
+        if (!el) return;
+        el.classList.remove("loading");
+        el.textContent = "";
+      });
+      const geminiError = document.getElementById("gemini-error");
+      if (geminiError) {
+        geminiError.textContent = "Could not generate the \"why it matters\" notes right now — the timeline and budget above are still accurate.";
+        geminiError.classList.remove("hidden");
+      }
+    }
+  }
+
+  function updateBudgetPrefix() {
+    document.getElementById("budget-prefix").textContent = currentCarried.currency || "USD";
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    renderCarriedChips(currentCarried);
+    updateBudgetPrefix();
+
+    const dateInput = document.getElementById("launchDate");
+    const today = new Date();
+    dateInput.min = today.toISOString().slice(0, 10);
+
+    document.getElementById("planner-form").addEventListener("submit", handleSubmit);
+  });
+})();
+</script>
+
+</body>
+</html>
