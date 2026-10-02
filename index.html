@@ -593,9 +593,9 @@
       .join("");
   }
 
-  // Sent by Retail Moment Finder: the chosen launchDate (YYYY-MM-DD) plus the
-  // three form fields it shares with this page. Each one only pre-fills if it's
-  // a valid value for its field; absent or malformed params change nothing.
+  // Optional URL params: launchDate (YYYY-MM-DD), launchType, teamSize and
+  // mfgStatus. Each one only pre-fills its field if it's a valid value for
+  // that field; absent or malformed params change nothing.
   function prefillFromParams() {
     const p = new URLSearchParams(window.location.search);
     const launchDate = (p.get("launchDate") || "").trim();
