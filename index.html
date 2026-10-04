@@ -400,6 +400,8 @@
 
   .edit-btn:hover { background: var(--ink); color: var(--paper); }
 
+  .edit-btn.ics-btn { margin: -16px 0 40px; }
+
   #gemini-error {
     margin-top: -6px;
     margin-bottom: 26px;
@@ -527,6 +529,7 @@
   Launch Planner is a portfolio demo. Timeline dates and budget figures are calculated deterministically; only the milestone explanations are AI-generated.
 </footer>
 
+<script src="ics.js"></script>
 <script>
 (function () {
   "use strict";
@@ -854,6 +857,37 @@ ${milestones.map((m) => `  "${m.id}": "..."`).join(",\n")}
     return SHELF_READY_URL + (qs ? "?" + qs : "");
   }
 
+  // ---------- Calendar (.ics) export ----------
+
+  function describeOffset(m, launchDate) {
+    if (m.weeksOffset === 0) return "Launch day: " + formatDate(launchDate) + ".";
+    const n = Math.abs(m.weeksOffset);
+    const weeks = n + (n === 1 ? " week " : " weeks ");
+    return weeks + (m.weeksOffset < 0 ? "before" : "after") + " launch (" + formatDate(launchDate) + ").";
+  }
+
+  function downloadIcs(milestones, launchDate, launchDateStr) {
+    const events = milestones.map((m) => {
+      const whyEl = document.getElementById("why-" + m.id);
+      const note = whyEl && !whyEl.classList.contains("loading") ? whyEl.textContent.trim() : "";
+      return {
+        id: m.id,
+        title: m.label,
+        date: m.date,
+        description: describeOffset(m, launchDate) + (note ? "\n\nWhy it matters: " + note : "")
+      };
+    });
+    const ics = window.LaunchPlannerIcs.buildIcs(events);
+    const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = window.LaunchPlannerIcs.icsFileName(launchDateStr);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   // ---------- Submit flow ----------
 
   let currentCarried = readCarried();
@@ -893,11 +927,16 @@ ${milestones.map((m) => `  "${m.id}": "..."`).join(",\n")}
       '<p class="results-sub">Dates and dollar amounts below are computed directly — only the short explanations are AI-written.</p>' +
       renderWarningBanner(formValues.mfgStatus) +
       renderTimeline(milestones, currentCarried) +
+      '<button class="edit-btn ics-btn" id="ics-btn">Download to calendar</button>' +
       renderBudget(budgetRows, budgetVal, currency) +
       '<div id="gemini-error" class="hidden"></div>' +
       '<button class="edit-btn" id="edit-btn">Edit Inputs</button>';
     resultsEl.classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    document.getElementById("ics-btn").addEventListener("click", () => {
+      downloadIcs(milestones, launchDate, dateVal);
+    });
 
     document.getElementById("edit-btn").addEventListener("click", () => {
       resultsEl.classList.add("hidden");

@@ -17,6 +17,9 @@ the short "why it matters" sentence under each milestone.
 Built with AI-assisted development — I directed the strategy, content,
 and architecture; AI executed the code under my review.
 
+## Features
+- Export milestones to your calendar (.ics)
+
 ---
 
 ## Part 1 — Get it running on your Mac
